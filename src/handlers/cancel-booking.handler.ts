@@ -9,7 +9,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   try {
     const bookingId = event.pathParameters?.id;
     if (!bookingId) {
-      return errorResponse(400, 'Booking ID is required');
+      return errorResponse('Booking ID is required', 400);
     }
 
     // Get existing booking
@@ -17,14 +17,14 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const existingBooking = await bookingRepository.getById(bookingId);
 
     if (!existingBooking) {
-      return errorResponse(404, 'Booking not found');
+      return errorResponse('Booking not found', 404);
     }
 
     // Cancel the booking
     const booking = await bookingRepository.cancel(bookingId);
 
     if (!booking) {
-      return errorResponse(404, 'Booking not found');
+      return errorResponse('Booking not found', 404);
     }
 
     // Step 1: Release seats back to flight inventory
@@ -61,18 +61,18 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     logger.info('Booking cancelled successfully', { bookingId });
-    return successResponse(200, booking);
+    return successResponse(booking);
   } catch (error: any) {
     logger.error('Error cancelling booking', { bookingId: event.pathParameters?.id, error: error.message });
 
     if (error.message.includes('Cannot cancel')) {
-      return errorResponse(400, error.message);
+      return errorResponse(error.message, 400);
     }
 
     if (error.message.includes('already cancelled')) {
-      return errorResponse(400, error.message);
+      return errorResponse(error.message, 400);
     }
 
-    return errorResponse(500, 'Internal server error');
+    return errorResponse('Internal server error');
   }
 }

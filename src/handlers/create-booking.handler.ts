@@ -9,7 +9,7 @@ import { successResponse, errorResponse } from '../utils/response';
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
     if (!event.body) {
-      return errorResponse(400, 'Request body is required');
+      return errorResponse('Request body is required', 400);
     }
 
     const input = CreateBookingSchema.parse(JSON.parse(event.body));
@@ -18,14 +18,14 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     logger.info('Validating customer', { customerId: input.customerId });
     const customer = await customersApiClient.getCustomer(input.customerId);
     if (!customer) {
-      return errorResponse(404, 'Customer not found');
+      return errorResponse('Customer not found', 404);
     }
 
     // Step 2: Validate flight exists and has availability
     logger.info('Validating flight', { flightId: input.flightId });
     const flight = await flightsApiClient.getFlight(input.flightId);
     if (!flight) {
-      return errorResponse(404, 'Flight not found');
+      return errorResponse('Flight not found', 404);
     }
 
     // Step 3: Count seats needed by cabin class
@@ -43,7 +43,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     if (seatsNeeded.economy > flight.availableSeats.economy ||
         seatsNeeded.business > flight.availableSeats.business ||
         seatsNeeded.first > flight.availableSeats.first) {
-      return errorResponse(400, 'Insufficient seats available');
+      return errorResponse('Insufficient seats available', 400);
     }
 
     // Step 4: Create booking
@@ -60,7 +60,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     } catch (error) {
       logger.error('Failed to update flight seats, rolling back booking', { bookingId: booking.bookingId, error });
       await bookingRepository.delete(booking.bookingId);
-      return errorResponse(500, 'Failed to reserve seats');
+      return errorResponse('Failed to reserve seats');
     }
 
     // Step 6: Award loyalty points (best effort, don't fail if this fails)
@@ -79,14 +79,14 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     logger.info('Booking created successfully', { bookingId: booking.bookingId, confirmationCode: booking.confirmationCode });
-    return successResponse(201, booking);
+    return successResponse(booking, 201);
   } catch (error: any) {
     logger.error('Error creating booking', { error: error.message, stack: error.stack });
 
     if (error.name === 'ZodError') {
-      return errorResponse(400, 'Invalid input', error.errors);
+      return errorResponse('Invalid input', 400);
     }
 
-    return errorResponse(500, 'Internal server error');
+    return errorResponse('Internal server error');
   }
 }

@@ -7,19 +7,19 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   try {
     const confirmationCode = event.pathParameters?.code;
     if (!confirmationCode) {
-      return errorResponse(400, 'Confirmation code is required');
+      return errorResponse('Confirmation code is required', 400);
     }
 
     logger.info('Getting booking by confirmation', { confirmationCode });
     const booking = await bookingRepository.getByConfirmationCode(confirmationCode);
 
     if (!booking) {
-      return errorResponse(404, 'Booking not found');
+      return errorResponse('Booking not found', 404);
     }
 
-    return successResponse(200, booking);
+    return successResponse(booking);
   } catch (error: any) {
     logger.error('Error getting booking by confirmation', { error: error.message });
-    return errorResponse(500, 'Internal server error');
+    return errorResponse('Internal server error');
   }
 }

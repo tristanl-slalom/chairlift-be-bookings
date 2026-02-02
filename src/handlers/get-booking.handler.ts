@@ -7,19 +7,19 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   try {
     const bookingId = event.pathParameters?.id;
     if (!bookingId) {
-      return errorResponse(400, 'Booking ID is required');
+      return errorResponse('Booking ID is required', 400);
     }
 
     logger.info('Getting booking', { bookingId });
     const booking = await bookingRepository.getById(bookingId);
 
     if (!booking) {
-      return errorResponse(404, 'Booking not found');
+      return errorResponse('Booking not found', 404);
     }
 
-    return successResponse(200, booking);
+    return successResponse(booking);
   } catch (error: any) {
     logger.error('Error getting booking', { error: error.message });
-    return errorResponse(500, 'Internal server error');
+    return errorResponse('Internal server error');
   }
 }
